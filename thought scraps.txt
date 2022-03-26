@@ -1,0 +1,7 @@
+To stop, bring each food down in cycle (ref. Moving Directions.jpg) such that (1) lands at Front, (2) lands 1/3way between Front and Rest, (3) 2/3way and (4) @ Rest.
+To start, advance at a slower pace until cycle starts.
+
+
+"Fixed" legs maintain y distance but change x distance 1/4step over "Moving" leg's parabola.
+
+Put "Moving leg" down when stopped. Resume movement from that leg.
