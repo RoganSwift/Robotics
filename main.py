@@ -2,6 +2,7 @@ import math as m
 import tkinter
 from tkinter import ttk
 import gpiozero
+import random
 
 class Plot_Object():
     def __init__(self, canvas):
@@ -84,33 +85,43 @@ class Leg():
     x1 = a*m.cos(t_0 + t)
     y1 = a*m.sin(t_0 + t)
 
-    x2 = x1 + b*m.sin(t_0 + t + p_0 - p)
-    y2 = y1 - b*m.cos(t_0 + t + p_0 - p)
-
-    a = 1.5
-    b = 0.5
-    leg = Leg(a, b, 0, 0)
-
-    target_x = 1.1
-    target_y = -0.5
-
-    (A1, A2), (B1, B2) = leg.solve(target_x, target_y, a, b)
-    print(f'x: {target_x} vs {leg.f_x(A1, A2)} and {leg.f_x(B1, B2)}')
-    print(f'y: {target_y} vs {leg.f_y(A1, A2)} and {leg.f_y(B1, B2)}')
-
+    x2 = x1 + b*m.sin(t_0 + t + p_0 + p - m.pi/2)
+    y2 = y1 - b*m.cos(t_0 + t + p_0 + p - m.pi/2)
     '''
 
-    def __init__(self, a, b, t_0, p_0):
+    def __init__(self, a, b, t_0, p_0, output_object, color, direction, name=None):
         self.a = a
         self.b = b
         self.t_0 = t_0
         self.p_0 = p_0
+        self.output_object = output_object
+        if name is not None:
+            self.name = name
+        else:
+            self.name = ''.join(random.choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", k=10))
+        self.color = color
+        self.direction = direction
 
         self.f_x = lambda t, p: a*m.cos(t_0 + t) + b*m.sin(t_0 + t + p_0 + p - m.pi/2)
         self.f_y = lambda t, p: a*m.sin(t_0 + t) - b*m.cos(t_0 + t + p_0 + p - m.pi/2)
 
-    def solve(self, x, y, a, b):
+    def move(self, x, y):
+        (theta_1, phi_1), (theta_2, phi_2) = self.solve_self(x, y)
+        if self.direction == 0:
+            theta = theta_1
+            phi = phi_1
+        else:
+            theta = theta_2
+            phi = phi_2
         
+        self.output_object.update(self.name, self.a, theta, self.b, phi, color = self.color)
+
+    def solve_self(self, x, y):
+        return self.solve(x, y, self.a, self.b)
+
+    def solve(self, x, y, a, b):
+        x, y = y, x #I have no idea how I mixed these up in the math.
+
         def get_phi(theta):
             dx = x - a*m.cos(theta)
             dy = y - a*m.sin(theta)
@@ -173,51 +184,30 @@ if __name__ == '__main__':
     options_frame = ttk.Frame(frame)
     options_frame.pack()
 
-    name_label = ttk.Label(options_frame, text='Name:')
-    name_label.grid(row=0, column=0)
-    name_text = tkinter.Entry(options_frame)
-    name_text.insert(tkinter.END, 'banana')
-    name_text.grid(row=0, column=1)
+    x_label = ttk.Label(options_frame, text='x:')
+    x_label.grid(row=0, column=0)
+    x_text = tkinter.Entry(options_frame)
+    x_text.insert(tkinter.END, '25')
+    x_text.grid(row=0, column=1)
 
-    leg1_label = ttk.Label(options_frame, text='Leg 1:')
-    leg1_label.grid(row=1, column=0)
-    leg1_text = tkinter.Entry(options_frame)
-    leg1_text.insert(tkinter.END, '50')
-    leg1_text.grid(row=1, column=1)
-
-    theta_label = ttk.Label(options_frame, text='Theta:')
-    theta_label.grid(row=2, column=0)
-    theta_text = tkinter.Entry(options_frame)
-    theta_text.insert(tkinter.END, '0')
-    theta_text.grid(row=2, column=1)
-
-    leg2_label = ttk.Label(options_frame, text='Leg 2:')
-    leg2_label.grid(row=3, column=0)
-    leg2_text = tkinter.Entry(options_frame)
-    leg2_text.insert(tkinter.END, '70')
-    leg2_text.grid(row=3, column=1)
-
-    phi_label = ttk.Label(options_frame, text='Phi:')
-    phi_label.grid(row=4, column=0)
-    phi_text = tkinter.Entry(options_frame)
-    phi_text.insert(tkinter.END, '0')
-    phi_text.grid(row=4, column=1)
+    y_label = ttk.Label(options_frame, text='y:')
+    y_label.grid(row=1, column=0)
+    y_text = tkinter.Entry(options_frame)
+    y_text.insert(tkinter.END, '25')
+    y_text.grid(row=1, column=1)
 
     canvas = tkinter.Canvas(frame, bg="white", height=300, width=300)
     canvas.pack()
     canvas.update()
 
     my_plot = Plot_Object(canvas)
+    leg_1 = Leg(100, 100, 0, 0, my_plot, 'blue', 0, 'banana')
 
     def new_update():
-        my_plot.update(str(name_text.get()),
-                       float(leg1_text.get()),
-                       float(theta_text.get()) * m.pi/180,
-                       float(leg2_text.get()),
-                       float(phi_text.get()) * m.pi/180,
-                       color = 'red')
+        x = float(x_text.get())
+        y = float(y_text.get())
+        leg_1.move(x, y)
 
     button.configure(command = new_update)
 
     window.mainloop()
-
