@@ -43,7 +43,7 @@ class Plot_Object():
             self.canvas.create_line(wid/2 + x1, 5 + y1, wid/2 + x2, 5 + y2, fill = color, width='4')
 
 class Servo_Object():
-    def __init__(self):
+    def __init__(self, section_1_pin, section_2_pin):
         #TODO
         pass
 
@@ -52,10 +52,35 @@ class Servo_Object():
         pass
 
 class Body():
-    def __init__(self, kind, leg_len_1, leg_len_2):
-        self.kind = kind
-        self.leg1 = Leg(leg_len_1, leg_len_2, m.pi/4, m.pi/4)
+    def __init__(self):
+        '''Represents a collection of legs. Locomotion only works with legs of the same lengths.
+           Assign legs, servos and a canvas, then call Body.initialize().'''
+        # Prepare a single, shared plot for each leg.
+        self.my_plot = None
 
+        # Prepare a list of legs.
+        self.legs = []
+        
+        # Prepare a dictionary of servos. Dictionary key will be leg name.
+        self.servos = {}
+
+    def assign_leg(self, name, section_1_len, section_2_len, t_0, p_0, direction):
+        '''Assign a leg to the body.'''
+        self.legs.append(Leg(name, section_1_len, section_2_len, t_0, p_0, direction))
+        self.servos[name] = []
+
+    def assign_canvas(self, canvas_obj):
+        '''Assign a canvas to the legs.'''
+        self.my_plot = Plot_Object(canvas_obj)
+
+    def assign_servo(self, leg_name, servo_obj):
+        '''Assign a servo to a leg.'''
+        self.servos[leg_name].append(servo_obj)
+
+    def initialize(self):
+        pass
+        #TODO: Initial move to halfway between min and max of both joints.
+        #TODO: Any preparations to the cavnas
 
     def stop_now():
         '''Body retains its current position. Move each leg where it is to right above 0, after a delay by leg so they don't all move at once.'''
@@ -89,17 +114,12 @@ class Leg():
     y2 = y1 - b*m.cos(t_0 + t + p_0 + p - m.pi/2)
     '''
 
-    def __init__(self, a, b, t_0, p_0, output_object, color, direction, name=None):
+    def __init__(self, name, a, b, t_0, p_0, direction):
+        self.name = name
         self.a = a
         self.b = b
         self.t_0 = t_0
         self.p_0 = p_0
-        self.output_object = output_object
-        if name is not None:
-            self.name = name
-        else:
-            self.name = ''.join(random.choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", k=10))
-        self.color = color
         self.direction = direction
 
         self.f_x = lambda t, p: a*m.cos(t_0 + t) + b*m.sin(t_0 + t + p_0 + p - m.pi/2)
@@ -108,13 +128,9 @@ class Leg():
     def move(self, x, y):
         (theta_1, phi_1), (theta_2, phi_2) = self.solve_self(x, y)
         if self.direction == 0:
-            theta = theta_1
-            phi = phi_1
+            return (theta_1, phi_1)
         else:
-            theta = theta_2
-            phi = phi_2
-        
-        self.output_object.update(self.name, self.a, theta, self.b, phi, color = self.color)
+            return (theta_2, phi_2)
 
     def solve_self(self, x, y):
         return self.solve(x, y, self.a, self.b)
@@ -200,8 +216,7 @@ if __name__ == '__main__':
     canvas.pack()
     canvas.update()
 
-    my_plot = Plot_Object(canvas)
-    leg_1 = Leg(100, 100, 0, 0, my_plot, 'blue', 0, 'banana')
+    body = Body(0, 100, 100, canvas)
 
     def new_update():
         x = float(x_text.get())
