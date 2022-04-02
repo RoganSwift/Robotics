@@ -52,7 +52,7 @@ class Servo_Object():
         pass
 
 class Body():
-    def __init__(self):
+    def __init__(self, body_orders, window):
         '''Represents a collection of legs. Locomotion only works with legs of the same lengths.
            Assign legs, servos and a canvas, then call Body.initialize().'''
         # Prepare a single, shared plot for each leg.
@@ -63,10 +63,13 @@ class Body():
         
         # Prepare a dictionary of servos. Dictionary key will be leg name.
         self.servos = {}
+        self.update_time = 10 # milliseconds
+        self.body_orders = body_orders
+        self.window = window
 
-    def assign_leg(self, name, section_1_len, section_2_len, t_0, p_0, direction):
+    def assign_leg(self, name, section_1_len, section_2_len, direction):
         '''Assign a leg to the body.'''
-        self.legs.append(Leg(name, section_1_len, section_2_len, t_0, p_0, direction))
+        self.legs.append(Leg(name, section_1_len, section_2_len, direction))
         self.servos[name] = []
 
     def assign_canvas(self, canvas_obj):
@@ -78,54 +81,64 @@ class Body():
         self.servos[leg_name].append(servo_obj)
 
     def initialize(self):
+        '''Perform any actions required to set the legs '''
         pass
         #TODO: Initial move to halfway between min and max of both joints.
-        #TODO: Any preparations to the cavnas
+        #TODO: Any preparations to the canvas
+        self.window.after(self.update_time, self.update)
 
-    def stop_now():
-        '''Body retains its current position. Move each leg where it is to right above 0, after a delay by leg so they don't all move at once.'''
+    def update(self):
+        ''''''
         pass
+        # check orders
+        # perform orders
+        self.window.after(self.update_time, self.update)
 
-    def stop_late(dist):
-        '''Just call stop_soon() once dist < 1 step.'''
-        pass
+        def stop_now():
+            '''Body retains its current position. Move each leg where it is to right above 0, after a delay by leg so they don't all move at once.'''
+            pass
 
-    def stop_soon(dist):
-        '''Body advances until provided point (dist) is above body. Plan each leg to be in the correct position exactly when that happens.'''
-        pass
+        def stop_late(dist):
+            '''Just call stop_soon() once dist < 1 step.'''
+            pass
 
-        '''For a point z ahead of 0, there are 4 states:
-        1) leg in the air - land @ z, adjusted for how long it takes to get there
-        2) leg already at exactly z - slide to 0
-        3) leg behind z - lift and move ahead
-        4) leg ahead of z - lift and move back
-        
-        For all, stop slide once @ z and slide to 0.'''
+        def stop_soon(dist):
+            '''Body advances until provided point (dist) is above body. Plan each leg to be in the correct position exactly when that happens.'''
+            pass
+
+            '''For a point z ahead of 0, there are 4 states:
+            1) leg in the air - land @ z, adjusted for how long it takes to get there
+            2) leg already at exactly z - slide to 0
+            3) leg behind z - lift and move ahead
+            4) leg ahead of z - lift and move back
+            
+            For all, stop slide once @ z and slide to 0.'''
 
 class Leg():
     '''Represents one two-segement leg with members of lengths a and b with minimum angles t_0 and p_0, respectively.
-       Position 0 for any leg is directly above/below the leg base. It's the resting position for all legs.'''
+       Angle 0 for the first leg is perpendicular to the surface. Angle 0 for the second leg is on the first leg.
+       Angles are in radians.'''
 
     '''
-    x1 = a*m.cos(t_0 + t)
-    y1 = a*m.sin(t_0 + t)
+    x1 = a*m.cos(t)
+    y1 = a*m.sin(t)
 
-    x2 = x1 + b*m.sin(t_0 + t + p_0 + p - m.pi/2)
-    y2 = y1 - b*m.cos(t_0 + t + p_0 + p - m.pi/2)
+    x2 = x1 + b*m.sin(t + p - m.pi/2)
+    y2 = y1 - b*m.cos(t + + p - m.pi/2)
     '''
 
-    def __init__(self, name, a, b, t_0, p_0, direction):
+    def __init__(self, name, a, b, direction):
         self.name = name
         self.a = a
         self.b = b
-        self.t_0 = t_0
-        self.p_0 = p_0
         self.direction = direction
 
-        self.f_x = lambda t, p: a*m.cos(t_0 + t) + b*m.sin(t_0 + t + p_0 + p - m.pi/2)
-        self.f_y = lambda t, p: a*m.sin(t_0 + t) - b*m.cos(t_0 + t + p_0 + p - m.pi/2)
+        self.f_x = lambda t, p: a*m.cos(t) + b*m.sin(t + p - m.pi/2)
+        self.f_y = lambda t, p: a*m.sin(t) - b*m.cos(t + p - m.pi/2)
 
     def move(self, x, y):
+        '''Return the leg angles that result in the provided x and y. Use this leg's direction and lengths.
+           ((theta_1, phi_1), (theta_2, phi_2)). 1 and 2 are the two directions. theta is leg 1, phi is leg 2.'''
         (theta_1, phi_1), (theta_2, phi_2) = self.solve_self(x, y)
         if self.direction == 0:
             return (theta_1, phi_1)
@@ -133,9 +146,13 @@ class Leg():
             return (theta_2, phi_2)
 
     def solve_self(self, x, y):
+        '''Return the two sets of leg angles that result in the provided x and y. Use this leg's lengths.
+           ((theta_1, phi_1), (theta_2, phi_2)). 1 and 2 are the two directions. theta is leg 1, phi is leg 2.'''
         return self.solve(x, y, self.a, self.b)
 
     def solve(self, x, y, a, b):
+        '''Return the two sets of leg angles that result in the provided x and y.
+           ((theta_1, phi_1), (theta_2, phi_2)). 1 and 2 are the two directions. theta is leg 1, phi is leg 2.'''
         x, y = y, x #I have no idea how I mixed these up in the math.
 
         def get_phi(theta):
@@ -161,36 +178,12 @@ class Leg():
 
         return (theta_1, phi_1), (theta_2, phi_2)
 
-    '''
-    def plot_range(self, x, y):
-        num_points = 40
-        t_range = [i*m.pi/2/num_points for i in range(num_points)]
-        p_range = [i*m.pi/2/num_points for i in range(num_points)]
-        
-        tp_s = [(t, p) for t, p in product(t_range, p_range)]
-        t_s = [item[0] for item in tp_s]
-        p_s = [item[1] for item in tp_s]
-
-        g1_s = [self.f_x(t, p)-x for t, p in tp_s]
-        g2_s = [self.f_y(t, p)-y for t, p in tp_s]
-
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-
-        ax.clear()
-        ax.scatter(t_s, p_s, g1_s, marker='o', color='g', label='g1')
-        ax.scatter(t_s, p_s, g2_s, marker='o', color='r', label='g2')
-
-        ax.set_xlabel('t')
-        ax.set_ylabel('p')
-        ax.set_zlabel('g')
-
-        fig.show()
-        print('aaa')
-    '''
-
 if __name__ == '__main__':
     window = tkinter.Tk()
+
+    body_orders = []
+    body = Body(body_orders, window)
+
     frame = ttk.Frame(window)
     frame.pack()
 
@@ -216,13 +209,16 @@ if __name__ == '__main__':
     canvas.pack()
     canvas.update()
 
-    body = Body(0, 100, 100, canvas)
+    #TODO: replace controls above with ability to add legs at given positions
+    #TODO: add buttons to control the legs once the loop starts. Each button changes body_orders, which Body will read in each .update() cycle.
 
     def new_update():
+        #TODO: scrap this and make it useful. Look at comments above.
         x = float(x_text.get())
         y = float(y_text.get())
-        leg_1.move(x, y)
+        #leg_1.move(x, y)
 
     button.configure(command = new_update)
 
+    window.after(body.update_time, body.initialize)
     window.mainloop()
