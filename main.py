@@ -1,6 +1,7 @@
 import math as m
 import tkinter
 from tkinter import ttk
+import time
 import gpiozero
 import random
 
@@ -43,7 +44,7 @@ class Plot_Object():
             self.canvas.create_line(wid/2 + x1, 5 + y1, wid/2 + x2, 5 + y2, fill = color, width='4')
 
 class Servo_Object():
-    def __init__(self, section_1_pin, section_2_pin):
+    def __init__(self, servo_1_pin, servo_2_pin):
         #TODO
         pass
 
@@ -52,7 +53,7 @@ class Servo_Object():
         pass
 
 class Body():
-    def __init__(self, body_orders, window):
+    def __init__(self, window):
         '''Represents a collection of legs. Locomotion only works with legs of the same lengths.
            Assign legs, servos and a canvas, then call Body.initialize().'''
         # Prepare a single, shared plot for each leg.
@@ -63,32 +64,42 @@ class Body():
         
         # Prepare a dictionary of servos. Dictionary key will be leg name.
         self.servos = {}
-        self.update_time = 10 # milliseconds
-        self.body_orders = body_orders
+        self.update_time = 100 # milliseconds
         self.window = window
+        print(f'{time.time()}: Body created')
 
     def assign_leg(self, name, section_1_len, section_2_len, direction):
         '''Assign a leg to the body.'''
         self.legs.append(Leg(name, section_1_len, section_2_len, direction))
         self.servos[name] = []
+        print(f'{time.time()}: Leg assigned with ({name}, {section_1_len}, {section_2_len}, {direction})')        
 
     def assign_canvas(self, canvas_obj):
         '''Assign a canvas to the legs.'''
         self.my_plot = Plot_Object(canvas_obj)
+        print(f'{time.time()}: Plot Object assigned')  
 
     def assign_servo(self, leg_name, servo_obj):
         '''Assign a servo to a leg.'''
         self.servos[leg_name].append(servo_obj)
+        print(f'{time.time()}: Servo assigned to leg {leg_name}')  
 
     def initialize(self):
         '''Perform any actions required to set the legs '''
-        pass
+        print(f'{time.time()}: Initialized!')  
+        self.order = 'wait'
+        self.details = None
         #TODO: Initial move to halfway between min and max of both joints.
         #TODO: Any preparations to the canvas
         self.window.after(self.update_time, self.update)
 
+    def set_order(self, order, details=None):
+        self.order = order
+        self.details = details
+
     def update(self):
         ''''''
+        print(f'{self.order} {self.details}')
         pass
         # check orders
         # perform orders
@@ -181,44 +192,184 @@ class Leg():
 if __name__ == '__main__':
     window = tkinter.Tk()
 
-    body_orders = []
-    body = Body(body_orders, window)
+    body = Body(window)
 
-    frame = ttk.Frame(window)
-    frame.pack()
+    ##### Window Layout #####
+    
+    # Frame one - Options to Build Body
+    # Initially visible; hidden when Initialize is pressed.
 
-    button = ttk.Button(frame, text='Update')
-    button.pack()
+    # .....................................................
+    # . Leg Name  . ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.
+    # .....................................................
+    # . Sec 1 Len . ~~~~~~~~~~ . Servo Pin 1 . ~~~~~~~~~~ .
+    # .....................................................
+    # . Sec 2 Len . ~~~~~~~~~~ . Servo Pin 2 . ~~~~~~~~~~ .
+    # .....................................................
+    # . Direction . ~~~~~~~~~~ .                          .
+    # .....................................................
+    # .    Add Leg (Button)    .    Add Servo (Button)    .
+    # .....................................................
+    # .                Initialize (Button)                .
+    # .....................................................
 
-    options_frame = ttk.Frame(frame)
-    options_frame.pack()
+    frame_1 = ttk.Frame(window)
+    frame_1.grid(row=0, column=0)
 
-    x_label = ttk.Label(options_frame, text='x:')
-    x_label.grid(row=0, column=0)
-    x_text = tkinter.Entry(options_frame)
-    x_text.insert(tkinter.END, '25')
-    x_text.grid(row=0, column=1)
+    # Row 1
+    label_1_1 = ttk.Label(frame_1, text='Leg Name')
+    label_1_1.grid(row=0, column=0)
 
-    y_label = ttk.Label(options_frame, text='y:')
-    y_label.grid(row=1, column=0)
-    y_text = tkinter.Entry(options_frame)
-    y_text.insert(tkinter.END, '25')
-    y_text.grid(row=1, column=1)
+    entry_1_2 = ttk.Entry(frame_1)
+    entry_1_2.insert(tkinter.END, 'Banana')
+    entry_1_2.grid(row=0, column=1, columnspan=3)
 
-    canvas = tkinter.Canvas(frame, bg="white", height=300, width=300)
+    # Row 2
+    label_1_3 = ttk.Label(frame_1, text='Sec. 1 Length')
+    label_1_3.grid(row=1, column=0)
+
+    entry_1_4 = ttk.Entry(frame_1)
+    entry_1_4.insert(tkinter.END, '50')
+    entry_1_4.grid(row=1, column=1)
+
+    label_1_5 = ttk.Label(frame_1, text='Servo 1 Pin')
+    label_1_5.grid(row=1, column=2)
+
+    entry_1_6 = ttk.Entry(frame_1)
+    entry_1_6.insert(tkinter.END, '16')
+    entry_1_6.grid(row=1, column=3)
+
+    # Row 3
+    label_1_7 = ttk.Label(frame_1, text='Sec. 2 Length')
+    label_1_7.grid(row=2, column=0)
+
+    entry_1_8 = ttk.Entry(frame_1)
+    entry_1_8.insert(tkinter.END, '50')
+    entry_1_8.grid(row=2, column=1)
+
+    label_1_9 = ttk.Label(frame_1, text='Servo 2 Pin')
+    label_1_9.grid(row=2, column=2)
+
+    entry_1_a = ttk.Entry(frame_1)
+    entry_1_a.insert(tkinter.END, '16')
+    entry_1_a.grid(row=2, column=3)
+
+    # Row 4
+    label_1_b = ttk.Label(frame_1, text='Direction')
+    label_1_b.grid(row=3, column=0)
+
+    variable_1_c = tkinter.StringVar(window)
+    variable_1_c.set('Clockwise')
+    
+    w = ttk.OptionMenu(frame_1, variable_1_c, 'Clockwise', 'Clockwise', 'Counterclockwise')
+    w.grid(row=3, column=1)
+ 
+    # Row 5
+    def add_leg():
+        leg_name = str(entry_1_2.get())
+        sec_1_len = float(entry_1_4.get())
+        sec_2_len = float(entry_1_8.get())
+        if variable_1_c.get() == 'Clockwise':
+            direction = 0
+        else:
+            direction = 1
+        body.assign_leg(leg_name, sec_1_len, sec_2_len, direction)
+
+    button_1_d = ttk.Button(frame_1, text='Add Leg', command = add_leg)
+    button_1_d.grid(row=4, column=0, columnspan=2)
+
+    def add_servo():
+        leg_name = str(entry_1_2.get())
+        servo_1_pin = float(entry_1_6.get())
+        servo_2_pin = float(entry_1_a.get())
+        body.assign_servo(leg_name, Servo_Object(servo_1_pin, servo_2_pin))    
+
+    button_1_e = ttk.Button(frame_1, text='Add Servo', command = add_servo)
+    button_1_e.grid(row=4, column=2, columnspan=2)
+
+    # Row 6
+    def initialize():
+        frame_1.grid_remove()
+        frame_2.grid()
+        frame_3.grid()
+        window.after(body.update_time, body.initialize)
+
+    button_1_f = ttk.Button(frame_1, text='Initialize', command = initialize)
+    button_1_f.grid(row=5, column=0, columnspan=4)
+
+    # Frame two - Options to Operate Body
+    # Initially hidden; revealed when Initialize is pressed.
+
+    # ....................................................
+    # .  Start Walking (Button) .   Stop_Now() (Button)  .
+    # ....................................................
+    # .  Stop_Later() (Button)  . Dist To Walk . ~~~~~~~ .
+    # ....................................................
+    # .     Freeze (Button)     .     Resume (Button)    .
+    # ....................................................
+    # .   Walk_Dist() (Button)  . Dist To Walk . ~~~~~~~ .
+    # ....................................................
+
+
+    frame_2 = ttk.Frame(window)
+    frame_2.grid(row=1, column=0)
+
+    #TODO: fade Stop Now/Stop Later until Start Walking is pressed. Same for Freeze -> Resume
+
+    # Row 1
+    button_2_1 = ttk.Button(frame_2, text='Start Walking', command = lambda: body.set_order('start_walking'))
+    button_2_1.grid(row=0, column=0)
+
+    button_2_2 = ttk.Button(frame_2, text='Stop Now', command = lambda: body.set_order('stop_now'))
+    button_2_2.grid(row=0, column=1, columnspan=2)
+
+    # Row 2
+    button_2_3 = ttk.Button(frame_2, text='Stop in X')
+    button_2_3.grid(row=1, column=0)    
+
+    label_2_4 = ttk.Label(frame_2, text='Dist. to Walk')
+    label_2_4.grid(row=1, column=1)
+
+    entry_2_5 = ttk.Entry(frame_2)
+    entry_2_5.insert(tkinter.END, '50')
+    entry_2_5.grid(row=1, column=2)
+
+    button_2_3.configure(command = lambda: body.set_order('stop_in_x', details = float(entry_2_5.get())))  
+
+    # Row 3
+    button_2_6 = ttk.Button(frame_2, text='Freeze', command = lambda: body.set_order('freeze'))
+    button_2_6.grid(row=2, column=0)
+
+    button_2_7 = ttk.Button(frame_2, text='Resume', command = lambda: body.set_order('resume'))
+    button_2_7.grid(row=2, column=1, columnspan=2)
+
+    # Row 4
+    button_2_8 = ttk.Button(frame_2, text='Walk X Distance')
+    button_2_8.grid(row=3, column=0)    
+
+    label_2_9 = ttk.Label(frame_2, text='Dist. to Walk')
+    label_2_9.grid(row=3, column=1)
+
+    entry_2_a = ttk.Entry(frame_2)
+    entry_2_a.insert(tkinter.END, '50')
+    entry_2_a.grid(row=3, column=2)
+
+    button_2_8.configure(command = lambda: body.set_order('walk_dist', details = float(entry_2_a.get())))  
+
+    # Frame three - canvas
+    # Initially hidden; revealsed when Initialize is pressed
+
+    frame_3 = ttk.Frame(window)
+    frame_2.grid(row=2, column=0)
+
+    canvas = tkinter.Canvas(frame_3, bg="white", height=300, width=300)
     canvas.pack()
     canvas.update()
+    body.assign_canvas(canvas)
 
-    #TODO: replace controls above with ability to add legs at given positions
-    #TODO: add buttons to control the legs once the loop starts. Each button changes body_orders, which Body will read in each .update() cycle.
+    # Hide frames 2 and 3 until Initialize unhides them
 
-    def new_update():
-        #TODO: scrap this and make it useful. Look at comments above.
-        x = float(x_text.get())
-        y = float(y_text.get())
-        #leg_1.move(x, y)
+    frame_2.grid_remove()
+    frame_3.grid_remove()
 
-    button.configure(command = new_update)
-
-    window.after(body.update_time, body.initialize)
     window.mainloop()
