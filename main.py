@@ -295,7 +295,17 @@ if __name__ == '__main__':
         window.after(body.update_time, body.initialize)
 
     button_1_f = ttk.Button(frame_1, text='Initialize', command = initialize)
-    button_1_f.grid(row=5, column=0, columnspan=4)
+    button_1_f.grid(row=5, column=1, columnspan=2)
+
+    def hardcoded():
+        body.assign_leg("Leg 1", 60, 60, 0)
+        body.assign_leg("Leg 2", 60, 60, 0)
+        body.assign_leg("Leg 3", 60, 60, 0)
+        body.assign_leg("Leg 4", 60, 60, 0)
+        initialize()
+
+    button_1_g = tkinter.Button(frame_1, text='Hardcoded', bg = 'blue', command = hardcoded)
+    button_1_g.grid(row=5, column=3)
 
     # Frame two - Options to Operate Body
     # Initially hidden; revealed when Initialize is pressed.
